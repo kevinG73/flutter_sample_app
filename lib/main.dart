@@ -1,121 +1,306 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const CalculatorApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class CalculatorApp extends StatelessWidget {
+  const CalculatorApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Calculatrice',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const CalculatorScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class CalculatorScreen extends StatefulWidget {
+  const CalculatorScreen({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<CalculatorScreen> createState() => _CalculatorScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _CalculatorScreenState extends State<CalculatorScreen> {
+  String _display = '0';
+  String _currentInput = '';
+  double? _firstOperand;
+  String? _operator;
+  bool _shouldResetDisplay = false;
 
-  void _incrementCounter() {
+  void _onDigitPressed(String digit) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      if (_shouldResetDisplay) {
+        _display = digit;
+        _currentInput = digit;
+        _shouldResetDisplay = false;
+      } else {
+        if (_display == '0' && digit != '.') {
+          _display = digit;
+          _currentInput = digit;
+        } else {
+          if (digit == '.' && _display.contains('.')) {
+            return;
+          }
+          _display += digit;
+          _currentInput += digit;
+        }
+      }
+    });
+  }
+
+  void _onOperatorPressed(String operator) {
+    setState(() {
+      if (_firstOperand == null) {
+        _firstOperand = double.tryParse(_display);
+        _operator = operator;
+        _shouldResetDisplay = true;
+      } else if (!_shouldResetDisplay) {
+        _calculate();
+        _operator = operator;
+        _shouldResetDisplay = true;
+      } else {
+        _operator = operator;
+      }
+    });
+  }
+
+  void _calculate() {
+    if (_firstOperand == null || _operator == null) return;
+
+    final secondOperand = double.tryParse(_currentInput);
+    if (secondOperand == null) return;
+
+    double result;
+    switch (_operator) {
+      case '+':
+        result = _firstOperand! + secondOperand;
+        break;
+      case '-':
+        result = _firstOperand! - secondOperand;
+        break;
+      case '*':
+        result = _firstOperand! * secondOperand;
+        break;
+      case '/':
+        if (secondOperand == 0) {
+          setState(() {
+            _display = 'Erreur';
+            _clear();
+          });
+          return;
+        }
+        result = _firstOperand! / secondOperand;
+        break;
+      default:
+        return;
+    }
+
+    setState(() {
+      if (result == result.toInt()) {
+        _display = result.toInt().toString();
+      } else {
+        _display = result.toStringAsFixed(8).replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');
+      }
+      _firstOperand = result;
+      _currentInput = _display;
+    });
+  }
+
+  void _onEqualsPressed() {
+    _calculate();
+    setState(() {
+      _operator = null;
+      _shouldResetDisplay = true;
+    });
+  }
+
+  void _clear() {
+    setState(() {
+      _display = '0';
+      _currentInput = '';
+      _firstOperand = null;
+      _operator = null;
+      _shouldResetDisplay = false;
+    });
+  }
+
+  void _onBackspace() {
+    setState(() {
+      if (_display.length > 1) {
+        _display = _display.substring(0, _display.length - 1);
+        _currentInput = _display;
+      } else {
+        _display = '0';
+        _currentInput = '';
+      }
+    });
+  }
+
+  void _onPercentPressed() {
+    setState(() {
+      final value = double.tryParse(_display);
+      if (value != null) {
+        final result = value / 100;
+        if (result == result.toInt()) {
+          _display = result.toInt().toString();
+        } else {
+          _display = result.toString();
+        }
+        _currentInput = _display;
+      }
+    });
+  }
+
+  void _onPlusMinusPressed() {
+    setState(() {
+      if (_display != '0') {
+        if (_display.startsWith('-')) {
+          _display = _display.substring(1);
+        } else {
+          _display = '-$_display';
+        }
+        _currentInput = _display;
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      backgroundColor: Colors.black,
+      body: SafeArea(
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
           children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            Expanded(
+              flex: 2,
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                alignment: Alignment.bottomRight,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    _display,
+                    style: const TextStyle(
+                      fontSize: 72,
+                      fontWeight: FontWeight.w300,
+                      color: Colors.white,
+                    ),
+                    maxLines: 1,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    _buildButtonRow(['C', '+/-', '%', '/']),
+                    const SizedBox(height: 8),
+                    _buildButtonRow(['7', '8', '9', '*']),
+                    const SizedBox(height: 8),
+                    _buildButtonRow(['4', '5', '6', '-']),
+                    const SizedBox(height: 8),
+                    _buildButtonRow(['1', '2', '3', '+']),
+                    const SizedBox(height: 8),
+                    _buildButtonRow(['0', '.', '<-', '=']),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+    );
+  }
+
+  Widget _buildButtonRow(List<String> buttons) {
+    return Expanded(
+      child: Row(
+        children: buttons.map((button) {
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: _buildButton(button),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildButton(String text) {
+    Color backgroundColor;
+    Color textColor = Colors.white;
+    VoidCallback onPressed;
+
+    if (text == 'C' || text == '+/-' || text == '%') {
+      backgroundColor = Colors.grey.shade600;
+      textColor = Colors.black;
+    } else if (text == '/' || text == '*' || text == '-' || text == '+' || text == '=') {
+      backgroundColor = Colors.orange;
+    } else {
+      backgroundColor = Colors.grey.shade800;
+    }
+
+    switch (text) {
+      case 'C':
+        onPressed = _clear;
+        break;
+      case '+/-':
+        onPressed = _onPlusMinusPressed;
+        break;
+      case '%':
+        onPressed = _onPercentPressed;
+        break;
+      case '<-':
+        onPressed = _onBackspace;
+        break;
+      case '=':
+        onPressed = _onEqualsPressed;
+        break;
+      case '+':
+      case '-':
+      case '*':
+      case '/':
+        onPressed = () => _onOperatorPressed(text);
+        break;
+      default:
+        onPressed = () => _onDigitPressed(text);
+    }
+
+    return SizedBox.expand(
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: backgroundColor,
+          foregroundColor: textColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: EdgeInsets.zero,
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w500,
+            color: textColor,
+          ),
+        ),
       ),
     );
   }

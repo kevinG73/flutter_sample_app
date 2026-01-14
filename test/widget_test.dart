@@ -1,30 +1,119 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:sampleapp/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  group('Calculator App Tests', () {
+    testWidgets('Calculator displays 0 on startup', (WidgetTester tester) async {
+      await tester.pumpWidget(const CalculatorApp());
+      expect(find.text('0'), findsOneWidget);
+    });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    testWidgets('Pressing digit updates display', (WidgetTester tester) async {
+      await tester.pumpWidget(const CalculatorApp());
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+      await tester.tap(find.text('5'));
+      await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+      expect(find.text('5'), findsWidgets);
+    });
+
+    testWidgets('Addition works correctly', (WidgetTester tester) async {
+      await tester.pumpWidget(const CalculatorApp());
+
+      await tester.tap(find.text('2'));
+      await tester.pump();
+      await tester.tap(find.text('+'));
+      await tester.pump();
+      await tester.tap(find.text('3'));
+      await tester.pump();
+      await tester.tap(find.text('='));
+      await tester.pump();
+
+      expect(find.text('5'), findsWidgets);
+    });
+
+    testWidgets('Subtraction works correctly', (WidgetTester tester) async {
+      await tester.pumpWidget(const CalculatorApp());
+
+      await tester.tap(find.text('9'));
+      await tester.pump();
+      await tester.tap(find.text('-'));
+      await tester.pump();
+      await tester.tap(find.text('4'));
+      await tester.pump();
+      await tester.tap(find.text('='));
+      await tester.pump();
+
+      expect(find.text('5'), findsWidgets);
+    });
+
+    testWidgets('Multiplication works correctly', (WidgetTester tester) async {
+      await tester.pumpWidget(const CalculatorApp());
+
+      await tester.tap(find.text('3'));
+      await tester.pump();
+      await tester.tap(find.text('*'));
+      await tester.pump();
+      await tester.tap(find.text('4'));
+      await tester.pump();
+      await tester.tap(find.text('='));
+      await tester.pump();
+
+      expect(find.text('12'), findsOneWidget);
+    });
+
+    testWidgets('Division works correctly', (WidgetTester tester) async {
+      await tester.pumpWidget(const CalculatorApp());
+
+      await tester.tap(find.text('8'));
+      await tester.pump();
+      await tester.tap(find.text('/'));
+      await tester.pump();
+      await tester.tap(find.text('2'));
+      await tester.pump();
+      await tester.tap(find.text('='));
+      await tester.pump();
+
+      expect(find.text('4'), findsWidgets);
+    });
+
+    testWidgets('Clear button resets display', (WidgetTester tester) async {
+      await tester.pumpWidget(const CalculatorApp());
+
+      await tester.tap(find.text('5'));
+      await tester.pump();
+      await tester.tap(find.text('C'));
+      await tester.pump();
+
+      expect(find.text('0'), findsOneWidget);
+    });
+
+    testWidgets('Multi-digit numbers work', (WidgetTester tester) async {
+      await tester.pumpWidget(const CalculatorApp());
+
+      await tester.tap(find.text('1'));
+      await tester.pump();
+      await tester.tap(find.text('2'));
+      await tester.pump();
+      await tester.tap(find.text('3'));
+      await tester.pump();
+
+      expect(find.text('123'), findsOneWidget);
+    });
+
+    testWidgets('Decimal numbers work', (WidgetTester tester) async {
+      await tester.pumpWidget(const CalculatorApp());
+
+      await tester.tap(find.text('3'));
+      await tester.pump();
+      await tester.tap(find.text('.'));
+      await tester.pump();
+      await tester.tap(find.text('5'));
+      await tester.pump();
+
+      expect(find.text('3.5'), findsOneWidget);
+    });
   });
 }
